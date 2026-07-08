@@ -8,6 +8,7 @@ import { useLocation } from 'react-router-dom'
 import { PlatformAvatar } from '@/app/messaging/platform-icon'
 import { Button } from '@/components/ui/button'
 import { Codicon } from '@/components/ui/codicon'
+import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from '@/components/ui/context-menu'
 import { GlyphSpinner } from '@/components/ui/glyph-spinner'
 import { KbdGroup } from '@/components/ui/kbd'
 import { SearchField } from '@/components/ui/search-field'
@@ -78,6 +79,7 @@ import {
   refreshWorktrees,
   scanAndRecordRepos
 } from '@/store/projects'
+import { openRouteTile } from '@/store/route-tiles'
 import {
   $cronSessions,
   $currentCwd,
@@ -128,6 +130,7 @@ import {
 } from './projects'
 import { SidebarBlankState, SidebarPinnedEmptyState, SidebarSessionSkeletons } from './section-states'
 import { SidebarSessionsSection, VIRTUALIZE_THRESHOLD } from './sessions-section'
+import { CONTEXT_SPLIT_KIT, SplitSubmenu } from './split-submenu'
 
 // Non-session groups (messaging platforms) stay compact: show a few rows up
 // front, reveal more in larger steps on demand. Keeps a busy platform from
@@ -1087,8 +1090,7 @@ export function ChatSidebar({
 
                 const isNewSession = item.id === 'new-session'
 
-                return (
-                  <SidebarMenuItem key={item.id}>
+                const button = (
                     <SidebarMenuButton
                       aria-disabled={!isInteractive}
                       className={cn(
@@ -1129,6 +1131,26 @@ export function ChatSidebar({
                         />
                       )}
                     </SidebarMenuButton>
+                )
+
+                // Route-backed rows (pages) can open in a split — right-click
+                // for the directional "Open in split" submenu.
+                return (
+                  <SidebarMenuItem key={item.id}>
+                    {item.route ? (
+                      <ContextMenu>
+                        <ContextMenuTrigger asChild>{button}</ContextMenuTrigger>
+                        <ContextMenuContent aria-label={s.nav[item.id] ?? item.label}>
+                          <SplitSubmenu
+                            kit={CONTEXT_SPLIT_KIT}
+                            label={s.row.openInSplit}
+                            onSplit={dir => item.route && openRouteTile(item.route, dir)}
+                          />
+                        </ContextMenuContent>
+                      </ContextMenu>
+                    ) : (
+                      button
+                    )}
                   </SidebarMenuItem>
                 )
               })}

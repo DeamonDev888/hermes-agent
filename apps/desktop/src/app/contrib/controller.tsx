@@ -45,6 +45,7 @@ import { $filePreviewTarget, $previewTarget, closeRightRail } from '@/store/prev
 import { $reviewOpen, closeReview, REVIEW_PANE_ID } from '@/store/review'
 import { $currentCwd } from '@/store/session'
 
+import { watchRouteTiles } from '../chat/route-tile'
 import { watchSessionTiles } from '../chat/session-tile'
 import { $terminalTakeover, setTerminalTakeover } from '../right-sidebar/store'
 
@@ -310,8 +311,10 @@ discoverBundledPlugins()
 // register — incl. runtime plugins arriving seconds after boot.
 watchContributedPanes()
 
-// Session tiles: persisted split sessions register panes docked beside main.
+// Session + route (page) tiles: persisted splits register panes docked beside
+// main.
 watchSessionTiles()
+watchRouteTiles()
 
 // ---------------------------------------------------------------------------
 // Titlebar chrome toggles -> tree. The TitlebarControls buttons keep their

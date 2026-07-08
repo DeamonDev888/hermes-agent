@@ -211,7 +211,7 @@ function syncTilePanes(): void {
   const tiles = $sessionTiles.get()
   const wanted = new Set(tiles.map(t => t.storedSessionId))
 
-  for (const { storedSessionId } of tiles) {
+  for (const { dir, storedSessionId } of tiles) {
     const title = tileTitle(storedSessionId)
     const current = registered.get(storedSessionId)
 
@@ -221,8 +221,8 @@ function syncTilePanes(): void {
         id: tilePaneId(storedSessionId),
         area: 'panes',
         title,
-        // Tiles live beside the thread: dock right of main, flex width.
-        data: { dock: { pane: 'workspace', pos: 'right' }, minWidth: '20rem', placement: 'main' },
+        // Tiles dock against main on the chosen edge (default right), flex width.
+        data: { dock: { pane: 'workspace', pos: dir ?? 'right' }, minWidth: '20rem', placement: 'main' },
         render: () => <SessionTilePane storedSessionId={storedSessionId} />
       })
 

@@ -27,6 +27,13 @@ import { canOpenSessionWindow, openSessionInNewWindow } from '@/store/windows'
 
 import type { SessionTitleResponse } from '../../types'
 
+import {
+  CONTEXT_SPLIT_KIT,
+  DROPDOWN_SPLIT_KIT,
+  type SplitMenuKit,
+  SplitSubmenu
+} from './split-submenu'
+
 // Rename a session, preferring the gateway's session.title RPC over REST.
 //
 // A freshly *branched* session (and any brand-new chat) lives only in the
@@ -85,6 +92,17 @@ interface SessionActions {
 
 type MenuItem = typeof DropdownMenuItem | typeof ContextMenuItem
 
+/** A menu flavour plus its dismiss handle (dropdown is controlled; context
+ *  menu can't be). */
+interface MenuKit {
+  Item: MenuItem
+  split: SplitMenuKit
+  close: () => void
+}
+
+const DROPDOWN_KIT = { Item: DropdownMenuItem, split: DROPDOWN_SPLIT_KIT } as const
+const CONTEXT_KIT = { Item: ContextMenuItem, split: CONTEXT_SPLIT_KIT } as const
+
 interface ItemSpec {
   className?: string
   disabled: boolean
@@ -119,15 +137,6 @@ function useSessionActions({
   }
 
   const items: ItemSpec[] = [
-    {
-      disabled: !sessionId,
-      icon: 'split-horizontal',
-      label: r.openInSplit,
-      onSelect: () => {
-        triggerHaptic('selection')
-        openSessionTile(sessionId)
-      }
-    },
     ...(canOpenSessionWindow()
       ? [
           {
@@ -197,11 +206,11 @@ function useSessionActions({
     </Item>
   )
 
-  const renderItems = (Item: MenuItem) => (
+  const renderItems = (kit: MenuKit) => (
     <>
-      {renderMenuItem(Item, pinItem)}
+      {renderMenuItem(kit.Item, pinItem)}
       <CopyButton
-        appearance={Item === DropdownMenuItem ? 'menu-item' : 'context-menu-item'}
+        appearance={kit.Item === DropdownMenuItem ? 'menu-item' : 'context-menu-item'}
         disabled={!sessionId}
         errorMessage={r.copyIdFailed}
         iconClassName="size-3.5 text-current"
@@ -210,7 +219,15 @@ function useSessionActions({
         onCopyError={err => notifyError(err, r.copyIdFailed)}
         text={sessionId}
       />
-      {items.map(spec => renderMenuItem(Item, spec))}
+      <SplitSubmenu
+        close={kit.close}
+        disabled={!sessionId}
+        key="split"
+        kit={kit.split}
+        label={r.openInSplit}
+        onSplit={dir => openSessionTile(sessionId, dir)}
+      />
+      {items.map(spec => renderMenuItem(kit.Item, spec))}
     </>
   )
 
@@ -235,10 +252,11 @@ interface SessionActionsMenuProps
 export function SessionActionsMenu({ children, align = 'end', sideOffset = 6, ...actions }: SessionActionsMenuProps) {
   const { t } = useI18n()
   const { renameDialog, renderItems } = useSessionActions(actions)
+  const [open, setOpen] = useState(false)
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu onOpenChange={setOpen} open={open}>
         <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
         <DropdownMenuContent
           align={align}
@@ -246,7 +264,7 @@ export function SessionActionsMenu({ children, align = 'end', sideOffset = 6, ..
           className="w-40"
           sideOffset={sideOffset}
         >
-          {renderItems(DropdownMenuItem)}
+          {renderItems({ ...DROPDOWN_KIT, close: () => setOpen(false) })}
         </DropdownMenuContent>
       </DropdownMenu>
       {renameDialog}
@@ -267,7 +285,10 @@ export function SessionContextMenu({ children, ...actions }: SessionContextMenuP
       <ContextMenu>
         <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
         <ContextMenuContent aria-label={t.sidebar.row.actionsFor(actions.title)} className="w-40">
-          {renderItems(ContextMenuItem)}
+          {/* Context menu can't be controlled (radix opens it on right-click);
+              a submenu-trigger click can't force-close it, but the split action
+              still fires and radix closes on the next interaction. */}
+          {renderItems({ ...CONTEXT_KIT, close: () => undefined })}
         </ContextMenuContent>
       </ContextMenu>
       {renameDialog}

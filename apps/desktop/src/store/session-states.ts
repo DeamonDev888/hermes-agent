@@ -46,9 +46,15 @@ export function dropSessionState(runtimeId: string) {
 // Session tiles.
 // ---------------------------------------------------------------------------
 
+/** Edge a tile docks against main when it first joins the tree. Shared by
+ *  session tiles and route (page) tiles. */
+export type SplitDir = 'bottom' | 'left' | 'right' | 'top'
+
 export interface SessionTile {
   /** Stored session id — the durable identity (runtime ids are ephemeral). */
   storedSessionId: string
+  /** Edge to dock against main on adoption (default right). */
+  dir?: SplitDir
   /** Live runtime id once the tile's resume has bound one. */
   runtimeId?: string
   /** Resume failed terminally (shown in the tile; retryable). */
@@ -66,7 +72,7 @@ function loadTiles(): SessionTile[] {
     return Array.isArray(parsed)
       ? parsed
           .filter((t): t is SessionTile => Boolean(t && typeof (t as SessionTile).storedSessionId === 'string'))
-          .map(t => ({ storedSessionId: t.storedSessionId }))
+          .map(t => ({ dir: t.dir, storedSessionId: t.storedSessionId }))
       : []
   } catch {
     return []
@@ -82,7 +88,10 @@ function saveTiles(tiles: SessionTile[]) {
     if (tiles.length === 0) {
       window.localStorage.removeItem(TILES_KEY)
     } else {
-      window.localStorage.setItem(TILES_KEY, JSON.stringify(tiles.map(t => ({ storedSessionId: t.storedSessionId }))))
+      window.localStorage.setItem(
+        TILES_KEY,
+        JSON.stringify(tiles.map(t => ({ dir: t.dir, storedSessionId: t.storedSessionId })))
+      )
     }
   } catch {
     // Nonfatal.
@@ -125,12 +134,13 @@ export function sessionTileDelegate(): SessionTileDelegate | null {
   return delegate
 }
 
-/** Open (or front) a tile for a stored session. Idempotent. */
-export function openSessionTile(storedSessionId: string) {
+/** Open (or front) a tile for a stored session, docked on `dir` (default
+ *  right). Idempotent — an already-open tile keeps its original edge. */
+export function openSessionTile(storedSessionId: string, dir: SplitDir = 'right') {
   const tiles = $sessionTiles.get()
 
   if (!tiles.some(t => t.storedSessionId === storedSessionId)) {
-    saveTiles([...tiles, { storedSessionId }])
+    saveTiles([...tiles, { dir, storedSessionId }])
   }
 }
 
