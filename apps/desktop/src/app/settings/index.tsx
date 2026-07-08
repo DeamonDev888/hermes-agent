@@ -46,8 +46,8 @@ const SETTINGS_VIEWS: readonly SettingsViewId[] = [
   'gateway',
   'keys',
   'notifications',
-  'sessions',
   'billing',
+  'sessions',
   'about'
 ]
 
@@ -148,6 +148,13 @@ export function SettingsView({ onClose, onConfigSaved, onMainModelChanged }: Set
       onSelect: () => setActiveView('notifications')
     },
     {
+      active: activeView === 'billing',
+      icon: BarChart3,
+      id: 'billing',
+      label: t.settings.nav.billing,
+      onSelect: () => setActiveView('billing')
+    },
+    {
       active: activeView === 'providers',
       children: [
         {
@@ -207,13 +214,6 @@ export function SettingsView({ onClose, onConfigSaved, onMainModelChanged }: Set
       id: 'sessions',
       label: t.settings.nav.archivedChats,
       onSelect: () => setActiveView('sessions')
-    },
-    {
-      active: activeView === 'billing',
-      icon: BarChart3,
-      id: 'billing',
-      label: t.settings.nav.billing,
-      onSelect: () => setActiveView('billing')
     },
     {
       active: activeView === 'about',
