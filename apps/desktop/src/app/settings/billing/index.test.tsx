@@ -80,7 +80,7 @@ describe('BillingSettings', () => {
     expect(screen.getByText('Refill $10 when balance falls below $5')).toBeTruthy()
     expect(screen.getByText('$120 of $220 left')).toBeTruthy()
     expect(screen.getByText('$876.47')).toBeTruthy()
-    expect(screen.getByText('$10 of $100 used')).toBeTruthy()
+    expect(screen.getByText('$10 of $100 used').classList.contains('tabular-nums')).toBe(true)
     expect(screen.getByText('Default ceiling')).toBeTruthy()
   })
 
@@ -270,8 +270,8 @@ describe('BillingSettings', () => {
     const subscriptionTrack = screen.getByRole('progressbar', { name: 'Subscription credits usage' })
 
     expect(subscriptionTrack.getAttribute('aria-valuenow')).toBe('0')
-    expect(subscriptionTrack.classList.contains('bg-destructive/15')).toBe(false)
-    expect(subscriptionTrack.classList.contains('bg-(--ui-bg-quaternary)')).toBe(true)
+    expect(subscriptionTrack.classList.contains('bg-destructive/25')).toBe(false)
+    expect(subscriptionTrack.classList.contains('bg-muted')).toBe(true)
   })
 
   it('refreshes both billing queries from the usage refresh button', async () => {
@@ -281,7 +281,7 @@ describe('BillingSettings', () => {
     expect(apiMocks.fetchBillingState).toHaveBeenCalledTimes(1)
     expect(apiMocks.fetchSubscriptionState).toHaveBeenCalledTimes(1)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Refresh usage' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
 
     await waitFor(() => expect(apiMocks.fetchBillingState).toHaveBeenCalledTimes(2))
     expect(apiMocks.fetchSubscriptionState).toHaveBeenCalledTimes(2)
@@ -305,7 +305,7 @@ describe('BillingSettings', () => {
 
     renderBilling()
 
-    const refresh = await screen.findByRole('button', { name: 'Refresh usage' })
+    const refresh = await screen.findByRole('button', { name: 'Refresh' })
 
     fireEvent.click(refresh)
 

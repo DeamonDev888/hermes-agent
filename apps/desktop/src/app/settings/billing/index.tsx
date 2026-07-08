@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Tip } from '@/components/ui/tooltip'
 import { BarChart3, ExternalLink, RefreshCw } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 
@@ -44,13 +45,16 @@ function openExternal(url?: string) {
 }
 
 function SummaryCard({ label, value, tone }: { label: string; tone?: 'muted' | 'primary'; value: string }) {
-  const pill = tone && value !== EMPTY_BILLING_VALUE
-
   return (
     <div className="min-w-0">
       <div className="text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">{label}</div>
-      <div className="mt-1 flex min-w-0 items-center gap-2 text-lg font-semibold text-foreground">
-        {pill ? <Pill tone={tone}>{value}</Pill> : <span className="truncate">{value}</span>}
+      <div
+        className={cn(
+          'mt-1 min-w-0 truncate text-lg font-semibold tabular-nums',
+          tone === 'primary' ? 'text-(--ui-green)' : tone === 'muted' ? 'text-(--ui-text-tertiary)' : 'text-foreground'
+        )}
+      >
+        {value}
       </div>
     </div>
   )
@@ -570,6 +574,7 @@ function UsageBar({ bar, fallbackLabel }: { bar?: BillingUsageRowView['bar']; fa
   }
 
   const width = Math.round(resolvedBar.value * 100)
+  const showDangerNub = resolvedBar.track === 'danger' && resolvedBar.state === 'danger' && width === 0
 
   return (
     <div
@@ -578,11 +583,14 @@ function UsageBar({ bar, fallbackLabel }: { bar?: BillingUsageRowView['bar']; fa
       aria-valuemin={0}
       aria-valuenow={width}
       className={cn(
-        'h-1.5 w-full overflow-hidden rounded-full',
-        resolvedBar.track === 'danger' ? 'bg-destructive/15' : 'bg-(--ui-bg-quaternary)'
+        'relative h-2 w-full overflow-hidden rounded-full',
+        resolvedBar.track === 'danger'
+          ? 'bg-destructive/25'
+          : 'bg-muted shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05)] dark:bg-muted/55 dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]'
       )}
       role="progressbar"
     >
+      {showDangerNub && <div className="absolute inset-y-0 left-0 z-10 w-2 rounded-full bg-destructive" />}
       <div
         className={cn(
           'h-full rounded-full transition-[width] duration-300',
@@ -604,7 +612,7 @@ function UsageBar({ bar, fallbackLabel }: { bar?: BillingUsageRowView['bar']; fa
 function UsageRow({ row }: { row: BillingUsageRowView }) {
   return (
     <div className="@container">
-      <div className="grid min-w-0 gap-2 py-3 @2xl:grid-cols-[minmax(0,220px)_minmax(8rem,1fr)_auto] @2xl:items-center @2xl:gap-4">
+      <div className="grid min-w-0 gap-2 py-3 @2xl:grid-cols-[minmax(0,180px)_minmax(0,1fr)_220px] @2xl:items-center @2xl:gap-4">
         <div className="min-w-0">
           <div className="text-[length:var(--conversation-text-font-size)] font-medium text-foreground">
             {row.title}
@@ -618,7 +626,7 @@ function UsageRow({ row }: { row: BillingUsageRowView }) {
         </div>
         <div
           className={cn(
-            'min-w-0 text-[length:var(--conversation-text-font-size)] font-medium @2xl:text-right',
+            'min-w-0 whitespace-nowrap text-[length:var(--conversation-text-font-size)] font-medium tabular-nums @2xl:w-[220px] @2xl:flex-none @2xl:text-right',
             row.bar?.state === 'danger' ? 'text-destructive' : 'text-foreground'
           )}
         >
@@ -659,18 +667,19 @@ function UsageRefreshRow({
   return (
     <div className="flex min-w-0 items-center justify-end gap-1.5 pt-1 text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">
       <span>Updated {formatUsageUpdatedAgo(updatedAt, now)}</span>
-      <span aria-hidden="true">·</span>
-      <Button
-        aria-label="Refresh usage"
-        className="size-7 p-0 text-(--ui-text-tertiary)"
-        disabled={isFetching}
-        onClick={onRefresh}
-        size="sm"
-        type="button"
-        variant="ghost"
-      >
-        <RefreshCw className={cn('size-3.5', isFetching && 'animate-spin')} />
-      </Button>
+      <Tip label="Refresh">
+        <Button
+          aria-label="Refresh"
+          className="size-7 p-0 text-(--ui-text-tertiary)"
+          disabled={isFetching}
+          onClick={onRefresh}
+          size="sm"
+          type="button"
+          variant="ghost"
+        >
+          <RefreshCw className={cn('size-3.5', isFetching && 'animate-spin')} />
+        </Button>
+      </Tip>
     </div>
   )
 }
@@ -684,7 +693,11 @@ function BillingFixtureSelect({
 }) {
   return (
     <Select onValueChange={value => onValueChange(value as BillingFixtureSelection)} value={value}>
-      <SelectTrigger aria-label="Billing fixture" className="h-7 w-40" size="sm">
+      <SelectTrigger
+        aria-label="Billing fixture"
+        className="h-7 w-32 border-transparent bg-transparent px-1.5 text-xs font-normal text-(--ui-text-tertiary) shadow-none hover:bg-muted/40 focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=open]:bg-muted/40"
+        size="sm"
+      >
         <SelectValue />
       </SelectTrigger>
       <SelectContent align="end">
